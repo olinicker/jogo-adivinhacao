@@ -5,12 +5,12 @@ import { Tip } from "./components/Tip";
 import { Button } from "./components/Button";
 import { Letter } from "./components/Letter";
 import { Header } from "./components/Header";
+import { LettersUsed } from "./components/LettersUsed";
 
 export function App() {
   function handleRestartGame() {
     window.alert("jogo reiniciado!");
   }
-
   return (
     <div className={styles.container}>
       <main>
@@ -31,6 +31,8 @@ export function App() {
           <Input autoFocus maxLength={1} placeholder="?"></Input>
           <Button title="Confirmar" />
         </div>
+
+        <LettersUsed></LettersUsed>
       </main>
     </div>
   );
