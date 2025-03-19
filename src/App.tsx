@@ -10,20 +10,28 @@ import { Header } from "./components/Header";
 import { LettersUsed, LettersUsedProps } from "./components/LettersUsed";
 
 export function App() {
+  const [score, setScore] = useState(0);
   const [letter, setLetter] = useState("");
-  const [attempts, setattempts] = useState(0);
-  const [letterUsed, setLetterUsed] = useState<LettersUsedProps[]>([]);
+  const [lettersUsed, setLettersUsed] = useState<LettersUsedProps[]>([]);
   const [challange, setChallange] = useState<Challenge | null>(null);
 
+  const ATTEMPT_MARGIN = 5;
+
   function handleRestartGame() {
-    window.alert("jogo reiniciado!");
+    const isConfirmed = window.confirm("Você deseja mesmo reiniciar?");
+
+    if (isConfirmed) {
+      startGame();
+    }
   }
 
   function startGame() {
     const index = Math.floor(Math.random() * WORDS.length);
     const randomWord = WORDS[index];
     setChallange(randomWord);
-    setattempts(0);
+    setScore(0);
+    setLetter("");
+    setLettersUsed([]);
   }
 
   function handleConfirm() {
@@ -36,21 +44,53 @@ export function App() {
     }
 
     const value = letter.toUpperCase();
-    const exists = letterUsed.find(
+    const exists = lettersUsed.find(
       (used) => used.value.toUpperCase() === value
     );
 
     if (exists) {
+      setLetter("");
       return alert("Você já utilizou a letra " + value);
     }
 
-    setLetterUsed((prevState) => [...prevState, { value, correct: false }]);
+    const hits = challange.word
+      .toUpperCase()
+      .split("")
+      .filter((char) => char === value).length;
+
+    const correct = hits > 0;
+    const currentScore = score + hits;
+
+    setLettersUsed((prevState) => [...prevState, { value, correct }]);
+    setScore(currentScore);
     setLetter("");
+  }
+
+  function endGame(message: string) {
+    window.alert(message);
+    startGame();
   }
 
   useEffect(() => {
     startGame();
   }, []);
+
+  useEffect(() => {
+    if (!challange) {
+      return;
+    }
+
+    setTimeout(() => {
+      if (score === challange.word.length) {
+        return endGame("Parabéns, você descobriu a palavra");
+      }
+
+      const attemptLimit = challange.word.length + ATTEMPT_MARGIN;
+      if (lettersUsed.length === attemptLimit) {
+        return endGame("Que pena, você usou todas as tentativas :(");
+      }
+    }, 200);
+  }, [score, lettersUsed.length]);
 
   if (!challange) {
     return;
@@ -59,13 +99,29 @@ export function App() {
   return (
     <div className={styles.container}>
       <main>
-        <Header current={attempts} max={10} onRestart={handleRestartGame} />
-        <Tip tip="Uma das linguagens de programação mais utilizadas"></Tip>
+        <Header
+          current={lettersUsed.length}
+          max={challange.word.length + ATTEMPT_MARGIN}
+          onRestart={handleRestartGame}
+        />
+        <Tip tip={challange.tip}></Tip>
 
         <div className={styles.word}>
-          {challange.word.split("").map(() => (
-            <Letter value=""></Letter>
-          ))}
+          {challange.word.split("").map((letter, index) => {
+            const letterUsed = lettersUsed.find(
+              (used) => used.value.toUpperCase() === letter.toUpperCase()
+            );
+
+            console.log(lettersUsed);
+
+            return (
+              <Letter
+                key={index}
+                value={letterUsed?.value}
+                color={letterUsed?.correct ? "correct" : "default"}
+              />
+            );
+          })}
         </div>
 
         <h4>Palpite</h4>
@@ -81,7 +137,7 @@ export function App() {
           <Button title="Confirmar" onClick={handleConfirm} />
         </div>
 
-        <LettersUsed data={letterUsed} />
+        <LettersUsed data={lettersUsed} />
       </main>
     </div>
   );
